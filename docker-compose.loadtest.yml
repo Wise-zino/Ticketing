@@ -1,0 +1,6 @@
+# Overlay for load testing: swaps Django's dev server for gunicorn so the
+# numbers reflect the locking design, not runserver's limits.
+#   docker compose -f docker-compose.yml -f docker-compose.loadtest.yml up -d --build
+services:
+  web:
+    command: gunicorn config.wsgi:application --workers 4 --threads 2 --bind 0.0.0.0:8000

@@ -1,0 +1,72 @@
+x-django-env: &django-env
+  POSTGRES_DB: ticketing
+  POSTGRES_USER: ticketing
+  POSTGRES_PASSWORD: ticketing
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  CELERY_BROKER_URL: redis://redis:6379/0
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ticketing
+      POSTGRES_USER: ticketing
+      POSTGRES_PASSWORD: ticketing
+    ports:
+      # Host 5433 -> container 5432 so it doesn't clash with a local Postgres.
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketing -d ticketing"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment: *django-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+    environment: *django-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    build: .
+    command: celery -A config beat --loglevel=info
+    volumes:
+      - .:/app
+    environment: *django-env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
