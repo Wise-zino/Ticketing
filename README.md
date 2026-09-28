@@ -67,6 +67,10 @@ docker compose run --rm web python manage.py test events -v 2
 - **`test_concurrency`**: 200 threads (each with its own DB connection) race for 50 tickets. Asserts exactly 50 succeed, exactly 150 get sold-out, and no ticket is held twice. It uses `TransactionTestCase` because a plain `TestCase` wraps everything in one transaction and would hide the race.
 - **`test_checkout`**: happy path, declined card, expired hold, **hold expiring while payment is in flight**, and duplicate idempotency keys.
 - **`test_sweeper`**: releases only expired holds, never touches active reservations or sold tickets, and is idempotent.
+  <img width="1027" height="126" alt="ticketing-test-photos (1)" src="https://github.com/user-attachments/assets/d50af1ce-9b7d-4a36-9482-04ba04a510c0" />
+  <img width="558" height="158" alt="ticketing-test-photos (2)" src="https://github.com/user-attachments/assets/50a2200b-b84a-4a88-ac60-04c8286cf447" />
+
+
 
 ## Load test
 
@@ -83,9 +87,14 @@ locust -f loadtest/locustfile.py --headless -u 500 -r 500 -t 60s \
 
 docker compose exec web python manage.py verify_inventory <event_id>
 ```
+<img width="923" height="100" alt="ticketing-test-photos (4)" src="https://github.com/user-attachments/assets/e6ab0b8f-49ef-4805-b21b-841c626f156e" />
+
 
 `verify_inventory` checks the invariants directly against the database: total ticket rows unchanged, `sold <= total`, all status buckets sum to the total, and no user holds more than one ticket.
 
+<img width="806" height="186" alt="ticketing-test-photos (7)" src="https://github.com/user-attachments/assets/3a8aa17f-965d-477d-a6bd-3d34a09dcfb0" />
+
+<img width="1058" height="278" alt="ticketing-test-photos (6)" src="https://github.com/user-attachments/assets/50668a90-6910-4d59-9068-d92f6c53ad5a" />
 
 ## Trade-offs and known limitations
 
